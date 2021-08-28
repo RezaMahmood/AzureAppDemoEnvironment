@@ -17,11 +17,11 @@ namespace IngestAPI.Controllers
     [ApiController]
     [Route("[controller]")]
     public class WeatherForecastController : ControllerBase
-    {     
+    {
         private readonly ILogger<WeatherForecastController> _logger;
         private string eventHubName = "";
-        private string eventHubNamespace="";
-        
+        private string eventHubNamespace = "";
+
 
         public WeatherForecastController(ILogger<WeatherForecastController> logger, IConfiguration configuration)
         {
@@ -29,30 +29,36 @@ namespace IngestAPI.Controllers
             eventHubNamespace = configuration["eventHubNamespace"];
             eventHubName = configuration["eventHubName"];
         }
-       
 
+        /// <summary>
+        /// Send input to EventHub using the app's managed identity or your local developer identity when using VS 2017+, VS Code or CLI: https://docs.microsoft.com/en-us/dotnet/api/overview/azure/identity-readme
+        /// </summary>
+        /// <param name="weatherForecast"></param>
+        /// <returns></returns>
         [HttpPost]
         public async Task<ActionResult<WeatherForecast>> PostWeatherForecast(WeatherForecast weatherForecast)
-        {   
+        {
             await using (EventHubProducerClient producerClient = new EventHubProducerClient(eventHubNamespace, eventHubName, new DefaultAzureCredential()))
             {
-                using(EventDataBatch eventBatch = await producerClient.CreateBatchAsync())
+                using (EventDataBatch eventBatch = await producerClient.CreateBatchAsync())
                 {
-                    if(!eventBatch.TryAdd(new EventData(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(weatherForecast)))))
+                    if (!eventBatch.TryAdd(new EventData(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(weatherForecast)))))
                     {
                         _logger.LogError("Event is too large for the batch and cannot be sent");
                     }
 
-                    try{
-                            await producerClient.SendAsync(eventBatch);
-                            _logger.LogInformation("message sent to Event Hub");
+                    try
+                    {
+                        await producerClient.SendAsync(eventBatch);
+                        _logger.LogInformation("message sent to Event Hub");
 
-                            return new OkResult();
+                        return new OkResult();
                     }
-                    finally{
+                    finally
+                    {
                         await producerClient.DisposeAsync();
-                    }                    
-                }                
+                    }
+                }
             }
         }
     }
