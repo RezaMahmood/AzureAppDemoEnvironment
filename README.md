@@ -4,8 +4,8 @@ Data Ingest
 
 - [x] App Service API
 - [x] send to EventHub
-- [ ] Azure Function EventHub trigger
-- [ ] Save to CosmosDB on Private Endpoint
+- [x] Azure Function EventHub trigger
+- [ ] Save to CosmosDB on Private Endpoint using Managed Identity
 
 Integration
 
