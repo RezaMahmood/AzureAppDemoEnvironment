@@ -2,10 +2,10 @@
 
 Data Ingest
 
-- [ ] App Service API
-- [ ] send to EventHub on Private Endpoint
+- [x] App Service API
+- [x] send to EventHub
 - [ ] Azure Function EventHub trigger
-- [ ] Save to CosmosDB
+- [ ] Save to CosmosDB on Private Endpoint
 
 Integration
 
@@ -33,3 +33,10 @@ API Query
 - [ ] Call Function to query SQL Server
 - [ ] Combine results
 - [ ] Return
+
+Deploy
+
+- [ ] Use Github Actions
+- [ ] Use ADO Pipelines
+- [ ] Use ADO Boards
+- [ ] Integrate ADO with Github
