@@ -11,19 +11,22 @@ using Models;
 using Azure.Identity;
 using Microsoft.Azure.Cosmos;
 
-
 namespace DataIngest
 {
     public static class EventHubIngestPump
     {
         [FunctionName("EventHubIngestPump")]
-        public static void Run(
-            [EventHubTrigger("DataIngestHub", Connection = "dataingest__fullyQualifiedNamespace")] EventData[] events,
-            ILogger log)
+        public static async Task Run(
+       [EventHubTrigger("EventHubName", Connection = "dataingest__fullyQualifiedNamespace")] EventData[] events,
+       ILogger log)
         {
             var exceptions = new List<Exception>();
 
             // instantiate cosmosdb client
+            var cosmosDatabase = Configuration["CosmosDatabaseId"];
+            var cosmosContainer = Configuration["CosmosContainerId"];
+            var cosmosClient = new CosmosClient(Configuration["CosmosAccountUri", new DefaultAzureCredential()]);
+            var container = cosmosClient.GetContainer(cosmosDatabase, cosmosContainer);
 
             foreach (var eventData in events)
             {
@@ -36,6 +39,7 @@ namespace DataIngest
 
                     messageBody.id = System.Guid.NewGuid().ToString();
                     //save event to cosmos
+                    await container.CreateItemAsync(messageBody, new PartitionKey(messageBody.id));
 
                 }
                 catch (Exception e)

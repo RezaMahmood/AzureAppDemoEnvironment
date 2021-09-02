@@ -19,7 +19,6 @@ locals {
   appServicePlanName      = "DataIngestPlan"
   appServiceName          = "DataIngestApp"
   applicationInsightsName = "AzureAppDemoInsights"
-  funcStorageAccountName  = "demodataingeststor"
   funcAppName             = "DataIngestFunc"
   vnetName                = "DataIngestVnet"
   cosmosdb_accountname    = "dataingestacc"
@@ -54,15 +53,16 @@ resource "azurerm_eventhub" "dataingest" {
   message_retention   = 1
 }
 
-resource "azurerm_eventhub_authorization_rule" "dataingest" {
-  name                = "dataingest"
-  namespace_name      = azurerm_eventhub_namespace.dataingest.name
-  eventhub_name       = azurerm_eventhub.dataingest.name
-  resource_group_name = azurerm_resource_group.demo.name
-  listen              = true
-  send                = true
-  manage              = false
-}
+# This shouldn't be needed as we're using RBAC to connect
+# resource "azurerm_eventhub_authorization_rule" "dataingest" {
+#   name                = "dataingest"
+#   namespace_name      = azurerm_eventhub_namespace.dataingest.name
+#   eventhub_name       = azurerm_eventhub.dataingest.name
+#   resource_group_name = azurerm_resource_group.demo.name
+#   listen              = true
+#   send                = true
+#   manage              = false
+# }
 
 resource "azurerm_app_service_plan" "dataingest" {
   name                = local.appServicePlanName
@@ -89,7 +89,8 @@ resource "azurerm_app_service" "dataingest" {
   }
 
   app_settings = {
-    "key" = "value"
+    "eventHubNamespace" = "${azurerm_eventhub.dataingest.namespace_name}"
+    "eventHubName"      = "${azurerm_eventhub.dataingest.name}"
   }
 
   identity {
@@ -131,6 +132,17 @@ resource "azurerm_function_app" "dataingest" {
   storage_account_name       = azurerm_storage_account.dataingest.name
   storage_account_access_key = azurerm_storage_account.dataingest.primary_access_key
   os_type                    = "linux"
+  identity {
+    type = "SystemAssigned"
+  }
+
+  app_settings = {
+    "dataingest__fullyQualifiedNamespace" = "${azurerm_eventhub_namespace.dataingest.name}.servicebus.windows.net"
+    "EventHubName"                        = "${azurerm_eventhub.dataingest.name}"
+    "CosmosAccountUri"                    = "${azurerm_cosmosdb_account.dataingest.endpoint}"
+    "CosmosDatabaseId"                    = "${azurerm_cosmosdb_sql_database.dataingest.id}"
+    "CosmosContainerId"                   = "${azurerm_cosmosdb_sql_container.dataingest.id}"
+  }
 }
 
 resource "azurerm_virtual_network" "dataingest" {
@@ -144,14 +156,21 @@ resource "azurerm_subnet" "dataingest_integration" {
   name                 = "integration-subnet"
   resource_group_name  = azurerm_resource_group.demo.name
   virtual_network_name = azurerm_virtual_network.dataingest.name
-  address_prefixes     = ["10.0.0.0/26"]
+  address_prefixes     = ["10.0.1.0/24"]
+}
+
+resource "azurerm_subnet" "dataingest_default" {
+  name                 = "default-subnet"
+  resource_group_name  = azurerm_resource_group.demo.name
+  virtual_network_name = azurerm_virtual_network.dataingest.name
+  address_prefixes     = ["10.0.0.0/24"]
 }
 
 resource "azurerm_subnet" "dataingest_privatelink" {
   name                 = "privatelink-subnet"
   resource_group_name  = azurerm_resource_group.demo.name
   virtual_network_name = azurerm_virtual_network.dataingest.name
-  address_prefixes     = ["10.0.1.0/26"]
+  address_prefixes     = ["10.0.2.0/24"]
 
   enforce_private_link_endpoint_network_policies = true
 }
@@ -197,6 +216,23 @@ resource "azurerm_cosmosdb_sql_container" "dataingest" {
   partition_key_version = 1
 }
 
+resource "null_resource" "cosmosdb-appservice-rbac" {
+  // Assign RBAC permissions for Function App to CosmosDB
+  provisioner "local-exec" {
+    command = <<EOD
+                az cosmosdb sql role assignment create \
+                --account-name ${azurerm_cosmosdb_account.dataingest.name} \
+                --resource-group ${azurerm_resource_group.demo.name} \
+                --scope "/" \
+                --principal-id ${azurerm_function_app.dataingest.identity.0.principal_id} \
+                --role-definition-id "00000000-0000-0000-0000-000000000002"
+                EOD
+  }
+
+  depends_on = [
+  azurerm_cosmosdb_account.dataingest, azurerm_app_service.dataingest]
+}
+
 resource "azurerm_private_endpoint" "dataingest_cosmos" {
   name                = format("%s-%s-endpoint", local.cosmosdb_accountname, random_integer.ri.result)
   location            = azurerm_resource_group.demo.location
@@ -231,12 +267,25 @@ resource "azurerm_private_dns_a_record" "dataingest-cosmos" {
   records             = [azurerm_private_endpoint.dataingest_cosmos.private_service_connection[0].private_ip_address]
 }
 
-// Assign RBAC permissions for App Service to CosmosDB
-resource "azurerm_role_assignment" "dataingest_cosmos" {
-  scope                = azurerm_cosmosdb_account.dataingest.id
-  role_definition_name = "Cosmos DB Built-in Data Contributor"
-  principal_id         = azurerm_app_service.dataingest.identity[0].principal_id
+// Assign the App Service permissions to write to EventHub
+resource "azurerm_role_assignment" "appservice-eventhub-sender" {
+  scope              = azurerm_eventhub.dataingest.id
+  role_definition_id = "2b629674-e913-4c01-ae53-ef4638d8f975"
+  principal_id       = azurerm_app_service.dataingest.identity.0.principal_id
 
-  // ensure both app service (with managed identity) and cosmos account are already created
-  depends_on = [azurerm_app_service.dataingest, azurerm_cosmosdb_account.dataingest]
+  depends_on = [
+    azurerm_eventhub.dataingest, azurerm_app_service.dataingest
+  ]
 }
+
+// Assign the Function App permissions to read from EventHub
+resource "azurerm_role_assignment" "funcapp-eventhub-receiver" {
+  scope              = azurerm_eventhub.dataingest.id
+  role_definition_id = "a638d3c7-ab3a-418d-83e6-5f17a39d4fde"
+  principal_id       = azurerm_function_app.dataingest.identity.0.principal_id
+
+  depends_on = [
+    azurerm_function_app.dataingest, azurerm_eventhub.dataingest
+  ]
+}
+
