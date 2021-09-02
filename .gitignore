@@ -221,8 +221,8 @@ node_modules
 .node_repl_history
 
 # Ignore built files
-bin/
-obj/
+**/bin/**
+**/obj/**
 wwwroot/
 dist/
 alexa-skills-linux

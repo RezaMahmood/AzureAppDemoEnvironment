@@ -3,11 +3,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Microsoft.Azure.EventHubs;
+using Azure.Messaging.EventHubs;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Models;
+using Azure.Identity;
+using Microsoft.Azure.Cosmos;
 
 
 namespace DataIngest
@@ -15,25 +17,26 @@ namespace DataIngest
     public static class EventHubIngestPump
     {
         [FunctionName("EventHubIngestPump")]
-        public static async Task Run(
-            [EventHubTrigger("samples-workitems", Connection = "")] EventData[] events,
-            [CosmosDB(databaseName: "", collectionName: "", ConnectionStringSetting = "")] IAsyncCollector<dynamic> documentsOut,
+        public static void Run(
+            [EventHubTrigger("DataIngestHub", Connection = "dataingest__fullyQualifiedNamespace")] EventData[] events,
             ILogger log)
         {
             var exceptions = new List<Exception>();
 
-            foreach (EventData eventData in events)
+            // instantiate cosmosdb client
+
+            foreach (var eventData in events)
             {
                 try
                 {
-                    var messageBody = JsonConvert.DeserializeObject<WeatherForecast>(Encoding.UTF8.GetString(eventData.Body.Array, eventData.Body.Offset, eventData.Body.Count));
+                    var messageBody = JsonConvert.DeserializeObject<WeatherForecast>(Encoding.UTF8.GetString(eventData.EventBody));
 
                     // Replace these two lines with your processing logic.
                     log.LogInformation($"C# Event Hub trigger function processed a message: {messageBody}");
 
                     messageBody.id = System.Guid.NewGuid().ToString();
+                    //save event to cosmos
 
-                    await documentsOut.AddAsync(messageBody);
                 }
                 catch (Exception e)
                 {
