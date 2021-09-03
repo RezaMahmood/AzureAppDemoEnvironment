@@ -53,17 +53,6 @@ resource "azurerm_eventhub" "dataingest" {
   message_retention   = 1
 }
 
-# This shouldn't be needed as we're using RBAC to connect
-# resource "azurerm_eventhub_authorization_rule" "dataingest" {
-#   name                = "dataingest"
-#   namespace_name      = azurerm_eventhub_namespace.dataingest.name
-#   eventhub_name       = azurerm_eventhub.dataingest.name
-#   resource_group_name = azurerm_resource_group.demo.name
-#   listen              = true
-#   send                = true
-#   manage              = false
-# }
-
 resource "azurerm_app_service_plan" "dataingest" {
   name                = local.appServicePlanName
   location            = azurerm_resource_group.demo.location
@@ -72,9 +61,14 @@ resource "azurerm_app_service_plan" "dataingest" {
   reserved            = true
 
   sku {
-    tier = "Basic"
-    size = "B1"
+    tier = "Standard"
+    size = "S1"
   }
+}
+
+resource "azurerm_app_service_virtual_network_swift_connection" "dataingest" {
+  app_service_id = azurerm_function_app.dataingest.id
+  subnet_id      = azurerm_subnet.dataingest_integration.id
 }
 
 resource "azurerm_app_service" "dataingest" {
@@ -85,12 +79,12 @@ resource "azurerm_app_service" "dataingest" {
 
   site_config {
     dotnet_framework_version = "v5.0"
-    scm_type                 = "LocalGit"
   }
 
   app_settings = {
-    "eventHubNamespace" = "${azurerm_eventhub.dataingest.namespace_name}"
-    "eventHubName"      = "${azurerm_eventhub.dataingest.name}"
+    "eventHubNamespace"              = "${azurerm_eventhub.dataingest.namespace_name}"
+    "eventHubName"                   = "${azurerm_eventhub.dataingest.name}"
+    "APPINSIGHTS_INSTRUMENTATIONKEY" = "${azurerm_application_insights.dataingest.instrumentation_key}"
   }
 
   identity {
@@ -140,8 +134,9 @@ resource "azurerm_function_app" "dataingest" {
     "dataingest__fullyQualifiedNamespace" = "${azurerm_eventhub_namespace.dataingest.name}.servicebus.windows.net"
     "EventHubName"                        = "${azurerm_eventhub.dataingest.name}"
     "CosmosAccountUri"                    = "${azurerm_cosmosdb_account.dataingest.endpoint}"
-    "CosmosDatabaseId"                    = "${azurerm_cosmosdb_sql_database.dataingest.id}"
-    "CosmosContainerId"                   = "${azurerm_cosmosdb_sql_container.dataingest.id}"
+    "CosmosDatabaseId"                    = "${azurerm_cosmosdb_sql_database.dataingest.name}"
+    "CosmosContainerId"                   = "${azurerm_cosmosdb_sql_container.dataingest.name}"
+    "APPINSIGHTS_INSTRUMENTATIONKEY"      = "${azurerm_application_insights.dataingest.instrumentation_key}"
   }
 }
 
@@ -149,28 +144,37 @@ resource "azurerm_virtual_network" "dataingest" {
   name                = local.vnetName
   location            = azurerm_resource_group.demo.location
   resource_group_name = azurerm_resource_group.demo.name
-  address_space       = ["10.0.0.0/23"]
+  address_space       = ["10.1.0.0/16"]
 }
 
 resource "azurerm_subnet" "dataingest_integration" {
   name                 = "integration-subnet"
   resource_group_name  = azurerm_resource_group.demo.name
   virtual_network_name = azurerm_virtual_network.dataingest.name
-  address_prefixes     = ["10.0.1.0/24"]
+  address_prefixes     = ["10.1.3.0/27"]
+
+  delegation {
+    name = "appservice-delegation"
+
+    service_delegation {
+      name    = "Microsoft.Web/serverFarms"
+      actions = ["Microsoft.Network/virtualNetworks/subnets/action"]
+    }
+  }
 }
 
 resource "azurerm_subnet" "dataingest_default" {
   name                 = "default-subnet"
   resource_group_name  = azurerm_resource_group.demo.name
   virtual_network_name = azurerm_virtual_network.dataingest.name
-  address_prefixes     = ["10.0.0.0/24"]
+  address_prefixes     = ["10.1.1.0/27"]
 }
 
 resource "azurerm_subnet" "dataingest_privatelink" {
   name                 = "privatelink-subnet"
   resource_group_name  = azurerm_resource_group.demo.name
   virtual_network_name = azurerm_virtual_network.dataingest.name
-  address_prefixes     = ["10.0.2.0/24"]
+  address_prefixes     = ["10.1.2.0/27"]
 
   enforce_private_link_endpoint_network_policies = true
 }
@@ -239,6 +243,11 @@ resource "azurerm_private_endpoint" "dataingest_cosmos" {
   resource_group_name = azurerm_resource_group.demo.name
   subnet_id           = azurerm_subnet.dataingest_privatelink.id
 
+  private_dns_zone_group {
+    name                 = "private-dns-zone-group"
+    private_dns_zone_ids = [azurerm_private_dns_zone.dataingest-cosmos.id]
+  }
+
   private_service_connection {
     name                           = format("%s-%s-connection", local.cosmosdb_accountname, random_integer.ri.result)
     private_connection_resource_id = azurerm_cosmosdb_account.dataingest.id
@@ -259,19 +268,11 @@ resource "azurerm_private_dns_zone_virtual_network_link" "dataingest-cosmos" {
   virtual_network_id    = azurerm_virtual_network.dataingest.id
 }
 
-resource "azurerm_private_dns_a_record" "dataingest-cosmos" {
-  name                = azurerm_cosmosdb_account.dataingest.name
-  zone_name           = azurerm_private_dns_zone.dataingest-cosmos.name
-  resource_group_name = azurerm_resource_group.demo.name
-  ttl                 = 300
-  records             = [azurerm_private_endpoint.dataingest_cosmos.private_service_connection[0].private_ip_address]
-}
-
 // Assign the App Service permissions to write to EventHub
 resource "azurerm_role_assignment" "appservice-eventhub-sender" {
-  scope              = azurerm_eventhub.dataingest.id
-  role_definition_id = "2b629674-e913-4c01-ae53-ef4638d8f975"
-  principal_id       = azurerm_app_service.dataingest.identity.0.principal_id
+  scope                = azurerm_eventhub.dataingest.id
+  role_definition_name = "Azure Event Hubs Data Sender"
+  principal_id         = azurerm_app_service.dataingest.identity.0.principal_id
 
   depends_on = [
     azurerm_eventhub.dataingest, azurerm_app_service.dataingest
@@ -280,9 +281,9 @@ resource "azurerm_role_assignment" "appservice-eventhub-sender" {
 
 // Assign the Function App permissions to read from EventHub
 resource "azurerm_role_assignment" "funcapp-eventhub-receiver" {
-  scope              = azurerm_eventhub.dataingest.id
-  role_definition_id = "a638d3c7-ab3a-418d-83e6-5f17a39d4fde"
-  principal_id       = azurerm_function_app.dataingest.identity.0.principal_id
+  scope                = azurerm_eventhub.dataingest.id
+  role_definition_name = "Azure Event Hubs Data Receiver"
+  principal_id         = azurerm_function_app.dataingest.identity.0.principal_id
 
   depends_on = [
     azurerm_function_app.dataingest, azurerm_eventhub.dataingest
