@@ -23,9 +23,9 @@ namespace DataIngest
             var exceptions = new List<Exception>();
 
             // instantiate cosmosdb client
-            var cosmosDatabase = Configuration["CosmosDatabaseId"];
-            var cosmosContainer = Configuration["CosmosContainerId"];
-            var cosmosClient = new CosmosClient(Configuration["CosmosAccountUri", new DefaultAzureCredential()]);
+            var cosmosDatabase = System.Environment.GetEnvironmentVariable("CosmosDatabaseId");
+            var cosmosContainer = System.Environment.GetEnvironmentVariable("CosmosContainerId");
+            var cosmosClient = new CosmosClient(System.Environment.GetEnvironmentVariable("CosmosAccountUri"), new DefaultAzureCredential());
             var container = cosmosClient.GetContainer(cosmosDatabase, cosmosContainer);
 
             foreach (var eventData in events)

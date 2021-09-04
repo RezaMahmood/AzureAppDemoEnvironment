@@ -54,6 +54,11 @@ namespace IngestAPI.Controllers
 
                         return new OkResult();
                     }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex.ToString());
+                        throw;
+                    }
                     finally
                     {
                         await producerClient.DisposeAsync();

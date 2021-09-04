@@ -9,3 +9,7 @@
     - Data plane RBAC supported through AZ Cli, Powershell and ARM
     - Disable local auth only through ARM
 - [Azure Functions Event Hub trigger with Managed Identity](https://docs.microsoft.com/en-us/azure/azure-functions/functions-bindings-event-hubs#event-hubs-extension-5x-and-higher) and [Github sample](https://github.com/Azure/azure-sdk-for-net/tree/Microsoft.Azure.WebJobs.Extensions.EventHubs_5.0.0-beta.7/sdk/eventhub/Microsoft.Azure.WebJobs.Extensions.EventHubs)
+- Github Actions
+    - App Service specific action
+    - Triggering on specific path changes
+    - building a specific path project
