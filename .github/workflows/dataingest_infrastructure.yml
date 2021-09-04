@@ -48,6 +48,9 @@ jobs:
             export ARM_CLIENT_ID="${{ secrets.AZURE_TF_CLIENT_ID }}"
             export ARM_CLIENT_SECRET="${{ secrets.AZURE_TF_CLIENT_SECRET }}"
             export ARM_TENANT_ID="${{ secrets.AZURE_TF_TENANT_ID }}"
+            az logout
+            az cache purge
+            az account clear
 
       - name: Terraform Init
         run: |
@@ -59,12 +62,3 @@ jobs:
 
       - name: Terraform Plan
         run: terraform plan -no-color
-
-      - name: Clean up Azure login
-        uses: azure/CLI@v1
-        with:
-          azcliversin: 2.0.72
-          inlineScript: |
-            az logout
-            az cache purge
-            az account clear
