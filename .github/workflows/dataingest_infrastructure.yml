@@ -48,6 +48,7 @@ jobs:
             export ARM_CLIENT_ID="${{ secrets.AZURE_TF_CLIENT_ID }}"
             export ARM_CLIENT_SECRET="${{ secrets.AZURE_TF_CLIENT_SECRET }}"
             export ARM_TENANT_ID="${{ secrets.AZURE_TF_TENANT_ID }}"
+            export ARM_SUBSCRIPTION_ID="${{ secrets.AZURE_TF_SUBSCRIPTION_ID }}"
             az logout
             az cache purge
             az account clear
