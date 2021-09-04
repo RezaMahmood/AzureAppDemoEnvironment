@@ -38,6 +38,17 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
+      - name: Configure Terraform
+        uses: azure/CLI@v1
+        with:
+          azcliversion: 2.0.72
+          inlineScript: |
+            STATE_ACCOUNT_KEY=$(az storage account keys list -g ${{ env.TF_STATESTOR_GROUP }} --account-name ${{ env.TF_STATESTOR_NAME }} --query '[0].value -o tsv')
+            export ARM_ACCESS_KEY=$STATE_ACCOUNT_KEY
+            export ARM_CLIENT_ID="${{ secrets.AZURE_TF_CLIENT_ID }}"
+            export ARM_CLIENT_SECRET="${{ secrets.AZURE_TF_CLIENT_SECRET }}"
+            export ARM_TENANT_ID="${{ secrets.AZURE_TF_TENANT_ID }}"
+
       - name: Terraform Init
         run: |
           cd ${{ env.TF_DIRECTORY }}
@@ -46,13 +57,14 @@ jobs:
       - name: Terraform Validate
         run: terraform validate -no-color
 
-      - name: Configure Terraform
-        uses: azure/CLI@v1
-        with:
-          azcliversion: 2.0.72
-          inlineScript: |
-            STATE_ACCOUNT_KEY=$(az storage account keys list -g ${{ env.TF_STATESTOR_GROUP }} --account-name ${{ env.TF_STATESTOR_NAME }} --query '[0].value -o tsv')
-            export TF_ACCESS_KEY=$STATE_ACCOUNT_KEY
-
       - name: Terraform Plan
         run: terraform plan -no-color
+
+      - name: Clean up Azure login
+        uses: azure/CLI@v1
+        with:
+          azcliversin: 2.0.72
+          inlineScript: |
+            az logout
+            az cache purge
+            az account clear
