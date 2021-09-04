@@ -59,7 +59,11 @@ jobs:
           terraform init
 
       - name: Terraform Validate
-        run: terraform validate -no-color
+        run: |
+          cd ${{ env.TF_DIRECTORY }}
+          terraform validate -no-color
 
       - name: Terraform Plan
-        run: terraform plan -no-color
+        run: |
+          cd ${{ env.TF_DIRECTORY }}
+          terraform plan -no-color
