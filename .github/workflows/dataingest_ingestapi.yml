@@ -18,9 +18,10 @@ on:
   workflow_dispatch:
   
 env:
-  AZURE_WEBAPP_NAME: AzureAppDemo
-  AZURE_WEBAPP_PACKAGE_PATH: '.'
+  AZURE_WEBAPP_NAME: 'IngestApi'
+  AZURE_WEBAPP_PACKAGE_PATH: 'publish'
   DOTNET_VERSION: '5.x'
+  WORKING_DIRECTORY: './applications/DataIngest/IngestApi'
 
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
@@ -47,14 +48,16 @@ jobs:
       # build the app and publish
       - name: dotnet build and publish
         run: |
+          working-directory:  ${{ env.WORKING_DIRECTORY }}
           dotnet restore
           dotnet build --configuration Release
           dotnet publish -c Release -o '${{ env.AZURE_WEBAPP_PACKAGE_PATH }}/${{ env.AZURE_WEBAPP_NAME }}' 
 
       # deploy to app service
       - name: 'Deploy to App Service'
-        uses: azure/webapps-deploy@v2
+        uses: azure/webapps-deploy@v2        
         with:
+          working-directory:  ${{ env.WORKING_DIRECTORY }}
           app-name: ${{ env.AZURE_WEBAPP_NAME }}
           package: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}/${{ env.AZURE_WEBAPP_NAME }}
           
