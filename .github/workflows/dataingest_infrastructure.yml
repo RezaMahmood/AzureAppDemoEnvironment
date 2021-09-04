@@ -24,6 +24,12 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Install terraform
+        uses: hashicorp/setup-terraform@v1
+
+      - name: Terraform Format
+        run: terraform fmt
+
       - name: Checkout terraform files
         uses: actions/checkout@v2
 
@@ -31,12 +37,6 @@ jobs:
         uses: azure/login@v1
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
-
-      - name: Install terraform
-        uses: hashicorp/setup-terraform@v1
-
-      - name: Terraform Format
-        run: terraform fmt
 
       - name: Terraform Init
         run: |
