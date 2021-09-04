@@ -18,7 +18,7 @@ on:
   workflow_dispatch:
   
 env:
-  AZURE_WEBAPP_NAME: 'IngestApi'  
+  AZURE_WEBAPP_NAME: 'DataIngestApp'  
   DOTNET_VERSION: '5.x'
   APP_DIRECTORY: './applications/DataIngest/IngestApi'
 
