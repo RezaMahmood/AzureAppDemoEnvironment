@@ -26,8 +26,8 @@ namespace IngestAPI.Controllers
         public WeatherForecastController(ILogger<WeatherForecastController> logger, IConfiguration configuration)
         {
             _logger = logger;
-            eventHubNamespace = configuration["eventHubNamespace"];
-            eventHubName = configuration["eventHubName"];
+            eventHubNamespace = System.Environment.GetEnvironmentVariable("eventHubNamespace");
+            eventHubName = System.Environment.GetEnvironmentVariable("eventHubName");
         }
 
         /// <summary>
