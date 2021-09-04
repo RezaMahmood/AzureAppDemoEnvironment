@@ -82,7 +82,7 @@ resource "azurerm_app_service" "dataingest" {
   }
 
   app_settings = {
-    "eventHubNamespace"              = "${azurerm_eventhub.dataingest.namespace_name}"
+    "eventHubNamespace"              = "${azurerm_eventhub.dataingest.namespace_name}.servicebus.windows.net"
     "eventHubName"                   = "${azurerm_eventhub.dataingest.name}"
     "APPINSIGHTS_INSTRUMENTATIONKEY" = "${azurerm_application_insights.dataingest.instrumentation_key}"
   }
