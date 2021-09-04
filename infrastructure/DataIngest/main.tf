@@ -5,6 +5,14 @@ terraform {
       version = ">=2.26"
     }
   }
+
+  backend "azurerm" {
+    resource_group_name  = "AzureAppDemo-tfstate"
+    storage_account_name = "azappdemostate"
+    container_name       = "tfstate"
+    key                  = "terraform.tfstate"
+
+  }
 }
 
 provider "azurerm" {
