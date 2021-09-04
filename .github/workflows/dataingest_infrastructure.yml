@@ -63,7 +63,7 @@ jobs:
           cd ${{ env.TF_DIRECTORY }}
           terraform validate -no-color
 
-      - name: Terraform Plan
+      - name: Terraform Apply
         run: |
           cd ${{ env.TF_DIRECTORY }}
-          terraform plan -no-color
+          terraform apply -no-color -auto-approve
