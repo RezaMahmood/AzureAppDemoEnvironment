@@ -48,10 +48,7 @@ jobs:
           azcliversion: 2.0.72
           inlineScript: |
             STATE_ACCOUNT_KEY=$(az storage account keys list -g ${{ env.TF_STATESTOR_GROUP }} --account-name ${{ env.TF_STATESTOR_NAME }} --query '[0].value' -o tsv)          
-            export ARM_ACCESS_KEY=$STATE_ACCOUNT_KEY
-            az logout
-            az cache purge
-            az account clear
+            export ARM_ACCESS_KEY=$STATE_ACCOUNT_KEY           
 
       - name: Terraform Init
         run: |
