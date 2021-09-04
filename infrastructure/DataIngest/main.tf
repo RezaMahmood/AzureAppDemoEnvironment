@@ -235,14 +235,7 @@ resource "azurerm_cosmosdb_sql_container" "dataingest" {
 resource "null_resource" "cosmosdb-appservice-rbac" {
   // Assign RBAC permissions for Function App to CosmosDB
   provisioner "local-exec" {
-    command = <<EOD
-                az cosmosdb sql role assignment create \
-                --account-name ${azurerm_cosmosdb_account.dataingest.name} \
-                --resource-group ${azurerm_resource_group.demo.name} \
-                --scope "/" \
-                --principal-id ${azurerm_function_app.dataingest.identity.0.principal_id} \
-                --role-definition-id "00000000-0000-0000-0000-000000000002"
-                EOD
+    command = "az cosmosdb sql role assignment create --account-name ${azurerm_cosmosdb_account.dataingest.name} --resource-group ${azurerm_resource_group.demo.name} --scope \"/\" --principal-id ${azurerm_function_app.dataingest.identity.0.principal_id} --role-definition-id \"00000000-0000-0000-0000-000000000002\""
   }
 
   depends_on = [

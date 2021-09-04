@@ -13,3 +13,4 @@
     - App Service specific action
     - Triggering on specific path changes
     - building a specific path project
+    - Terraform idiosynchracies with authentication
