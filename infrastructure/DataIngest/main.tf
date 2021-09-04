@@ -129,14 +129,18 @@ resource "azurerm_function_app" "dataingest" {
   identity {
     type = "SystemAssigned"
   }
+  version = "~3"
 
   app_settings = {
-    "dataingest__fullyQualifiedNamespace" = "${azurerm_eventhub_namespace.dataingest.name}.servicebus.windows.net"
-    "EventHubName"                        = "${azurerm_eventhub.dataingest.name}"
-    "CosmosAccountUri"                    = "${azurerm_cosmosdb_account.dataingest.endpoint}"
-    "CosmosDatabaseId"                    = "${azurerm_cosmosdb_sql_database.dataingest.name}"
-    "CosmosContainerId"                   = "${azurerm_cosmosdb_sql_container.dataingest.name}"
-    "APPINSIGHTS_INSTRUMENTATIONKEY"      = "${azurerm_application_insights.dataingest.instrumentation_key}"
+    "EventHubConnection__fullyQualifiedNamespace" = "${azurerm_eventhub_namespace.dataingest.name}.servicebus.windows.net"
+    "EventHubName"                                = "${azurerm_eventhub.dataingest.name}"
+    "CosmosAccountUri"                            = "${azurerm_cosmosdb_account.dataingest.endpoint}"
+    "CosmosDatabaseId"                            = "${azurerm_cosmosdb_sql_database.dataingest.name}"
+    "CosmosContainerId"                           = "${azurerm_cosmosdb_sql_container.dataingest.name}"
+    "APPINSIGHTS_INSTRUMENTATIONKEY"              = "${azurerm_application_insights.dataingest.instrumentation_key}"
+    "WEBSITE_RUN_FROM_PACKAGE"                    = 1
+    "FUNCTIONS_WORKER_RUNTIME"                    = "dotnet"
+    "FUNCTIONS_EXTENSION_VERSION"                 = "~3"
   }
 }
 
