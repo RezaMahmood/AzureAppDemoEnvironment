@@ -191,6 +191,39 @@ resource "azurerm_subnet" "dataingest_privatelink" {
   enforce_private_link_endpoint_network_policies = true
 }
 
+resource "azurerm_network_security_group" "dataingest" {
+  name                = "default_nsg"
+  location            = azurerm_resource_group.demo.location
+  resource_group_name = azurerm_resource_group.demo.name
+
+  security_rule {
+    name                       = "deny_from_internet"
+    priority                   = 100
+    direction                  = "inbound"
+    access                     = "Deny"
+    protocol                   = "*"
+    source_port_range          = "*"
+    destination_port_range     = "*"
+    source_address_prefix      = "*"
+    destination_address_prefix = "*"
+  }
+}
+
+resource "azurerm_subnet_network_security_group_association" "dataingest_privatelink" {
+  subnet_id                 = azurerm_subnet.dataingest_privatelink.id
+  network_security_group_id = azurerm_network_security_group.dataingest.id
+}
+
+resource "azurerm_subnet_network_security_group_association" "dataingest_default" {
+  subnet_id                 = azurerm_subnet.dataingest_default.id
+  network_security_group_id = azurerm_network_security_group.dataingest.id
+}
+
+resource "azurerm_subnet_network_security_group_association" "dataingest_integration" {
+  subnet_id                 = azurerm_subnet.dataingest_integration.id
+  network_security_group_id = azurerm_network_security_group.dataingest.id
+}
+
 // Create CosmosDB with Private endpoint
 resource "azurerm_cosmosdb_account" "dataingest" {
   name                = format("%s-%s", local.cosmosdb_accountname, random_integer.ri.result)
