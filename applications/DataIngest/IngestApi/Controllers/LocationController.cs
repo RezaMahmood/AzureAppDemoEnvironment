@@ -49,12 +49,7 @@ namespace IngestAPI.Controllers
 
             dynamic response = JsonConvert.DeserializeObject(await result.Content.ReadAsStringAsync());
 
-            return new ContentResult()
-            {
-                Content = string.Format("Based on your IP address ({0} it looks like your country code is {1}", remoteIpAddress, response.countryRegion.isoCode.ToString()),
-                StatusCode = 200,
-                ContentType = "application/text"
-            };
+            return Content(string.Format("Based on your IP address ({0} it looks like your country code is {1}", remoteIpAddress, response.countryRegion.isoCode.ToString()));
 
         }
     }
