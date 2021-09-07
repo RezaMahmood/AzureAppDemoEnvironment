@@ -24,7 +24,8 @@ namespace IngestAPI.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult> GetLocation()
+        [Route("/Location")]
+        public async Task<ActionResult> Get()
         {
 
             // get the client's IP location
