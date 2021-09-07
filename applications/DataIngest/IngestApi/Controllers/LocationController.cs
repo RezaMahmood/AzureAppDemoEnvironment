@@ -32,7 +32,7 @@ namespace IngestAPI.Controllers
             var remoteIpAddress = Request.HttpContext.Connection.RemoteIpAddress;
 
             // make a call to the Azure Maps Geolocation endpoint to get the user's current location
-            var maps_endpoint = string.Format("GET https://atlas.microsoft.com/geolocation/ip/json?api-version=1.0&ip={0}&subscription-key={1}", remoteIpAddress, maps_account_key);
+            var maps_endpoint = string.Format("https://atlas.microsoft.com/geolocation/ip/json?api-version=1.0&ip={0}&subscription-key={1}", remoteIpAddress, maps_account_key);
 
             var client = new HttpClient();
             client.DefaultRequestHeaders.Add("x-ms-client-id", maps_client_id);
