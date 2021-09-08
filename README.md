@@ -34,6 +34,12 @@ API Query
 - [ ] Combine results
 - [ ] Return
 
+Management and Operations
+
+- [x] Application Insights
+- [ ] Azure Bastion
+- [ ] JumpBox
+
 Deploy
 
 - [ ] Use Github Actions
