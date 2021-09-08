@@ -4,16 +4,16 @@ on:
   push:
     branches: [main]
     paths:
-      - "infrastructure/DataIngest/**"
+      - "infrastructure/**"
   pull_request:
     branches: [main]
     paths:
-      - "infrastructure/DataIngest/**"
+      - "infrastructure/**"
 
   workflow_dispatch:
 
 env:
-  TF_DIRECTORY: "./infrastructure/DataIngest"
+  TF_DIRECTORY: "./infrastructure"
   TF_STATESTOR_NAME: "azappdemostate"
   TF_STATESTOR_GROUP: "AzureAppDemo-tfstate"
   TF_STATESTOR_CONTAINER: "tfstate"
@@ -21,6 +21,7 @@ env:
   ARM_CLIENT_SECRET: "${{ secrets.AZURE_TF_CLIENT_SECRET }}"
   ARM_TENANT_ID: "${{ secrets.AZURE_TF_TENANT_ID }}"
   ARM_SUBSCRIPTION_ID: "${{ secrets.AZURE_TF_SUBSCRIPTION_ID }}"
+  APPDEMOCONFIG_KEYVAULT: "AzureAppDemoConfig"
 
 jobs:
   build:
@@ -47,8 +48,18 @@ jobs:
         with:
           azcliversion: 2.0.72
           inlineScript: |
-            STATE_ACCOUNT_KEY=$(az storage account keys list -g ${{ env.TF_STATESTOR_GROUP }} --account-name ${{ env.TF_STATESTOR_NAME }} --query '[0].value' -o tsv)          
-            export ARM_ACCESS_KEY=$STATE_ACCOUNT_KEY           
+            storage_account_key=$(az storage account keys list -g ${{ env.TF_STATESTOR_GROUP }} --account-name ${{ env.TF_STATESTOR_NAME }} --query '[0].value' -o tsv)          
+            export ARM_ACCESS_KEY=$storage_account_key
+
+      - name: Retrieve jumpbox secrets
+        uses: azure/CLI@v1
+        with:
+          azcliversion: 2.0.72
+          inlineScript: |
+            jumpboxusername=$(az keyvault secret show -n ${{ env.APPDEMOCONFIG_KEYVAULT }} -g ${{ env.TF_STATESTOR_GROUP }} --id "jumpboxusername") 
+            jumpboxpassword=$(az keyvault secret show -n ${{ env.APPDEMOCONFIG_KEYVAULT }} -g ${{ env.TF_STATESTOR_GROUP }} --id "jumpboxpassword") 
+            export TF_VAR_jumpboxusername=$jumpboxusername
+            export TF_VAR_jumpboxpassword=$jumpboxpassword
 
       - name: Terraform Init
         run: |
