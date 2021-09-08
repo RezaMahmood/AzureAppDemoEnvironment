@@ -40,3 +40,6 @@ Deploy
 - [ ] Use ADO Pipelines
 - [ ] Use ADO Boards
 - [ ] Integrate ADO with Github
+
+
+![High Level Architecture](AzureAppDemo.gif)
