@@ -43,19 +43,13 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      - name: Retrieve TF State Storage key
+      - name: Retrieve TF variables
         uses: azure/CLI@v1
         with:
           azcliversion: 2.0.72
           inlineScript: |
             storage_account_key=$(az storage account keys list -g ${{ env.TF_STATESTOR_GROUP }} --account-name ${{ env.TF_STATESTOR_NAME }} --query '[0].value' -o tsv)          
             export ARM_ACCESS_KEY=$storage_account_key
-
-      - name: Retrieve jumpbox secrets
-        uses: azure/CLI@v1
-        with:
-          azcliversion: 2.0.72
-          inlineScript: |
             jumpboxusername=$(az keyvault secret show --name "jumpboxusername" --vault-name ${{ env.APPDEMOCONFIG_KEYVAULT }} --query 'value' -o tsv) 
             jumpboxpassword=$(az keyvault secret show --name "jumpboxpassword" --vault-name ${{ env.APPDEMOCONFIG_KEYVAULT }} --query 'value' -o tsv) 
             export TF_VAR_jumpboxusername=$jumpboxusername

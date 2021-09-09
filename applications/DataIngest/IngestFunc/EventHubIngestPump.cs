@@ -17,7 +17,7 @@ namespace DataIngest
     {
         [FunctionName("EventHubIngestPump")]
         public static async Task Run(
-       [EventHubTrigger("EventHubName", Connection = "EventHubConnection")] EventData[] events,
+       [EventHubTrigger("%EventHubName%", Connection = "EventHubConnection")] EventData[] events,
        ILogger log)
         {
             var exceptions = new List<Exception>();

@@ -42,6 +42,7 @@ resource "azurerm_app_service" "dataingest" {
   site_config {
     dotnet_framework_version = "v5.0"
     linux_fx_version         = "DOTNETCORE|5.0"
+    always_on                = true
   }
 
 
@@ -113,6 +114,11 @@ resource "azurerm_function_app" "dataingest" {
     "WEBSITE_RUN_FROM_PACKAGE"                    = 1
     "FUNCTIONS_WORKER_RUNTIME"                    = "dotnet"
     "FUNCTIONS_EXTENSION_VERSION"                 = "~3"
+    "WEBSITE_DNS_SERVER"                          = "168.63.129.16"
+  }
+
+  site_config {
+    always_on = true
   }
 }
 
@@ -168,7 +174,7 @@ resource "azurerm_network_security_group" "dataingest" {
     protocol                   = "*"
     source_port_range          = "*"
     destination_port_range     = "*"
-    source_address_prefix      = "*"
+    source_address_prefix      = "Internet"
     destination_address_prefix = "*"
   }
 }

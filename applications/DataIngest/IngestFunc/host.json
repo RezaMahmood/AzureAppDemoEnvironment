@@ -1,10 +1,23 @@
 {
     "version": "2.0",
+    "extensions": {
+        "eventHubs": {
+            "batchCheckpointFrequency": 5,
+            "eventProcessorOptions": {
+                "maxBatchSize": 256,
+                "prefetchCount": 512
+            },
+            "initialOffsetOptions": {
+                "type": "fromStart",
+                "enqueuedTimeUtd": ""
+            }
+        }
+    },
     "logging": {
         "applicationInsights": {
-            "samplingExcludedTypes": "Request",
             "samplingSettings": {
-                "isEnabled": true
+                "isEnabled": true,
+                "excludedTypes": "Request"
             }
         }
     }
