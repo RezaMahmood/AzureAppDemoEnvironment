@@ -69,7 +69,7 @@ jobs:
         id: plan
         run: |
           cd ${{ env.TF_DIRECTORY }}
-          terraform plan -no-color
+          terraform plan -no-color -var="jumpboxusername=${jumpboxusername}" -var="jumpboxpassword=${jumpboxpassword}"
 
       - run: echo ${{ steps.plan.output.stdout }}
       - run: echo ${{ steps.plan.output.stderr }}
