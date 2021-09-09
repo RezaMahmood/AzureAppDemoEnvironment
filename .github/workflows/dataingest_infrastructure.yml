@@ -52,8 +52,9 @@ jobs:
             export ARM_ACCESS_KEY=$storage_account_key
             jumpboxusername=$(az keyvault secret show --name "jumpboxusername" --vault-name ${{ env.APPDEMOCONFIG_KEYVAULT }} --query 'value' -o tsv) 
             jumpboxpassword=$(az keyvault secret show --name "jumpboxpassword" --vault-name ${{ env.APPDEMOCONFIG_KEYVAULT }} --query 'value' -o tsv) 
-            export TF_VAR_jumpboxusername=$jumpboxusername
-            export TF_VAR_jumpboxpassword=$jumpboxpassword
+            export TF_VAR_jumpboxusername=${jumpboxusername}
+            export TF_VAR_jumpboxpassword=${jumpboxpassword}
+            echo $jumpboxusername
 
       - name: Terraform Init
         run: |
