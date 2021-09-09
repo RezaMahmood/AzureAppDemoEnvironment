@@ -45,6 +45,7 @@ jobs:
 
       - name: Retrieve TF variables
         uses: azure/CLI@v1
+        id: get_tfvars
         with:
           azcliversion: 2.0.72
           inlineScript: |
@@ -54,7 +55,7 @@ jobs:
             jumpboxpassword=$(az keyvault secret show --name "jumpboxpassword" --vault-name ${{ env.APPDEMOCONFIG_KEYVAULT }} --query 'value' -o tsv) 
             export TF_VAR_jumpboxusername=${jumpboxusername}
             export TF_VAR_jumpboxpassword=${jumpboxpassword}
-            echo $jumpboxusername
+            echo "jumpboxusername=$(jumpboxusername)" >> $GITHUB_ENV
 
       - name: Terraform Init
         run: |
@@ -70,7 +71,7 @@ jobs:
         id: plan
         run: |
           cd ${{ env.TF_DIRECTORY }}
-          terraform plan -no-color -var="jumpboxusername=${jumpboxusername}" -var="jumpboxpassword=${jumpboxpassword}"
+          terraform plan -no-color -var="jumpboxusername=${{ env.jumpboxusername }}" -var="jumpboxpassword=${jumpboxpassword}"
 
       - run: echo ${{ steps.plan.output.stdout }}
       - run: echo ${{ steps.plan.output.stderr }}
