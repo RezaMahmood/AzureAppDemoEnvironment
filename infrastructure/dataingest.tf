@@ -115,6 +115,7 @@ resource "azurerm_function_app" "dataingest" {
     "FUNCTIONS_WORKER_RUNTIME"                    = "dotnet"
     "FUNCTIONS_EXTENSION_VERSION"                 = "~3"
     "WEBSITE_DNS_SERVER"                          = "168.63.129.16"
+    "WEBSITE_VNET_ROUTE_ALL"                      = 1
   }
 
   site_config {

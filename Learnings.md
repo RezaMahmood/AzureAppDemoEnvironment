@@ -14,3 +14,4 @@
     - Triggering on specific path changes
     - building a specific path project
     - Terraform idiosynchracies with authentication
+- [Azure Functions Binding Expressions](https://docs.microsoft.com/en-us/azure/azure-functions/functions-bindings-expressions-patterns#binding-expressions---app-settings)

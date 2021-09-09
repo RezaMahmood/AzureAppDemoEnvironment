@@ -65,6 +65,14 @@ jobs:
           cd ${{ env.TF_DIRECTORY }}
           terraform validate -no-color
 
+      - name: Terraform Plan
+        id: plan
+        run: terraform plan -no-color
+
+      - run: echo ${{ steps.plan.output.stdout }}
+      - run: echo ${{ steps.plan.output.stderr }}
+      - run: echo ${{ steps.plan.output.exitcode }}
+
       - name: Terraform Apply
         run: |
           cd ${{ env.TF_DIRECTORY }}
