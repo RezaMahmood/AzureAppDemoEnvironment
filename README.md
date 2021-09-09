@@ -5,7 +5,7 @@ Data Ingest
 - [x] App Service API
 - [x] send to EventHub
 - [x] Azure Function EventHub trigger
-- [ ] Save to CosmosDB on Private Endpoint using Managed Identity
+- [x] Save to CosmosDB on Private Endpoint using Managed Identity
 
 Integration
 
@@ -37,8 +37,8 @@ API Query
 Management and Operations
 
 - [x] Application Insights
-- [ ] Azure Bastion
-- [ ] JumpBox
+- [x] Azure Bastion
+- [x] JumpBox
 
 Deploy
 
