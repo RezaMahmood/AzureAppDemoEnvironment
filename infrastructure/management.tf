@@ -11,40 +11,25 @@ variable "jumpboxpassword" {
   sensitive   = true
 }
 
-data "azurerm_resource_group" "demo" {
-  name = local.resource_group_name
-}
-
-data "azurerm_virtual_network" "dataingest" {
-  name                = local.vnetName
-  resource_group_name = data.azurerm_resource_group.demo.name
-}
-
-data "azurerm_subnet" "dataingest_default" {
-  name                 = "default-subnet"
-  virtual_network_name = data.azurerm_virtual_network.dataingest.name
-  resource_group_name  = data.azurerm_resource_group.demo.name
-}
-
 resource "azurerm_subnet" "bastion" {
   name                 = "AzureBastionSubnet"
-  resource_group_name  = data.azurerm_resource_group.demo.name
-  virtual_network_name = data.azurerm_virtual_network.dataingest.name
+  resource_group_name  = azurerm_resource_group.demo.name
+  virtual_network_name = azurerm_virtual_network.dataingest.name
   address_prefixes     = ["10.1.4.0/27"]
 }
 
 resource "azurerm_public_ip" "bastion" {
   name                = "bastion-ip"
-  location            = data.azurerm_resource_group.demo.location
-  resource_group_name = data.azurerm_resource_group.demo.name
+  location            = azurerm_resource_group.demo.location
+  resource_group_name = azurerm_resource_group.demo.name
   allocation_method   = "Static"
   sku                 = "Standard"
 }
 
 resource "azurerm_bastion_host" "bastion" {
   name                = "AzureDemoBastion"
-  location            = data.azurerm_resource_group.demo.location
-  resource_group_name = data.azurerm_resource_group.demo.name
+  location            = azurerm_resource_group.demo.location
+  resource_group_name = azurerm_resource_group.demo.name
 
   ip_configuration {
     name                 = "configuration"
@@ -55,20 +40,20 @@ resource "azurerm_bastion_host" "bastion" {
 
 resource "azurerm_network_interface" "jumpbox" {
   name                = "jumpbox-nic"
-  location            = data.azurerm_virtual_network.dataingest.location
-  resource_group_name = data.azurerm_resource_group.demo.name
+  location            = azurerm_virtual_network.dataingest.location
+  resource_group_name = azurerm_resource_group.demo.name
 
   ip_configuration {
     name                          = "jumpbox-internal"
-    subnet_id                     = data.azurerm_subnet.dataingest_default.id
+    subnet_id                     = azurerm_subnet.dataingest_default.id
     private_ip_address_allocation = "Dynamic"
   }
 }
 
 resource "azurerm_windows_virtual_machine" "jumpbox" {
   name                     = "jumpbox-vm"
-  resource_group_name      = data.azurerm_resource_group.demo.name
-  location                 = data.azurerm_virtual_network.dataingest.location
+  resource_group_name      = azurerm_resource_group.demo.name
+  location                 = azurerm_virtual_network.dataingest.location
   size                     = "Standard_B4ms"
   admin_username           = var.jumpboxusername
   admin_password           = var.jumpboxpassword
@@ -93,5 +78,19 @@ resource "azurerm_windows_virtual_machine" "jumpbox" {
   identity {
     type = "SystemAssigned"
   }
+}
+
+resource "azurerm_dev_test_global_vm_shutdown_schedule" "jumpbox" {
+  virtual_machine_id = azurerm_windows_virtual_machine.jumpbox.id
+  location           = azurerm_windows_virtual_machine.jumpbox.location
+  enabled            = true
+
+  daily_recurrence_time = "1900"
+  timezone              = "Singapore Standard Time"
+
+  notification_settings {
+    enabled = false
+  }
+
 }
 
