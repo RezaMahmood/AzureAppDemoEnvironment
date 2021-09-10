@@ -15,3 +15,4 @@
     - building a specific path project
     - Terraform idiosynchracies with authentication
 - [Azure Functions Binding Expressions](https://docs.microsoft.com/en-us/azure/azure-functions/functions-bindings-expressions-patterns#binding-expressions---app-settings)
+- Github az cli action runs in a container so using that to get environment variables to pass to other actions won't work.  Using Keyvault actions works and is easier to configure. [Always check Github Actions for Azure](https://docs.microsoft.com/en-us/azure/developer/github/github-actions)
