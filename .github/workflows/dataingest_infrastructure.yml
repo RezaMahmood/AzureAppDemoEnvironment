@@ -44,18 +44,11 @@ jobs:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
       - name: Retrieve TF variables
-        uses: azure/CLI@v1
-        id: get_tfvars
+        uses: Azure/get-keyvault-secrets@v1
         with:
-          azcliversion: 2.0.72
-          inlineScript: |
-            storage_account_key=$(az storage account keys list -g ${{ env.TF_STATESTOR_GROUP }} --account-name ${{ env.TF_STATESTOR_NAME }} --query '[0].value' -o tsv)          
-            export ARM_ACCESS_KEY=$storage_account_key
-            jumpboxusername=$(az keyvault secret show --name "jumpboxusername" --vault-name ${{ env.APPDEMOCONFIG_KEYVAULT }} --query 'value' -o tsv) 
-            jumpboxpassword=$(az keyvault secret show --name "jumpboxpassword" --vault-name ${{ env.APPDEMOCONFIG_KEYVAULT }} --query 'value' -o tsv) 
-            export TF_VAR_jumpboxusername=${jumpboxusername}
-            export TF_VAR_jumpboxpassword=${jumpboxpassword}
-            echo "jumpboxusername=$(jumpboxusername)" >> $GITHUB_ENV
+          keyvault: ${{ env.APPDEMOCONFIG_KEYVAULT }}
+          secrets: "jumpboxusername, jumpboxpassword"
+        id: getjumpboxsecrets
 
       - name: Terraform Init
         run: |
@@ -71,7 +64,7 @@ jobs:
         id: plan
         run: |
           cd ${{ env.TF_DIRECTORY }}
-          terraform plan -no-color -var="jumpboxusername=${{ env.jumpboxusername }}" -var="jumpboxpassword=${jumpboxpassword}"
+          terraform plan -no-color -var="jumpboxusername=${{ steps.getjumpboxsecrets.outputs.jumpboxusername }}" -var="jumpboxpassword=${{ steps.getjumpboxsecrets.outputs.jumpboxpassword }}"
 
       - run: echo ${{ steps.plan.output.stdout }}
       - run: echo ${{ steps.plan.output.stderr }}
@@ -80,4 +73,4 @@ jobs:
       - name: Terraform Apply
         run: |
           cd ${{ env.TF_DIRECTORY }}
-          terraform apply -no-color -auto-approve
+          terraform apply -no-color -auto-approve -var="jumpboxusername=${{ steps.getjumpboxsecrets.outputs.jumpboxusername }}" -var="jumpboxpassword=${{ steps.getjumpboxsecrets.outputs.jumpboxpassword }}"
