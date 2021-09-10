@@ -7,7 +7,7 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using Newtonsoft.Json;
 
-namespace IngestAPI.Controllers
+namespace IngestApi.Controllers
 {
     [Route("controller")]
     public class LocationController : Controller
