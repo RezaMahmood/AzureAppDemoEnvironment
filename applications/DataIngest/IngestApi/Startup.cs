@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
@@ -33,6 +34,8 @@ namespace IngestApi
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "IngestApi", Version = "v1" });
             });
             services.AddApplicationInsightsTelemetry();
+            services.AddResponseCaching();
+            services.AddSingleton<MyMemoryCache>();
 
         }
 
@@ -49,6 +52,18 @@ namespace IngestApi
             app.UseHttpsRedirection();
 
             app.UseRouting();
+            app.UseResponseCaching();
+
+            app.Use(async (context, next) =>
+            {
+                context.Response.GetTypedHeaders().CacheControl = new Microsoft.Net.Http.Headers.CacheControlHeaderValue()
+                {
+                    Public = true,
+                    MaxAge = TimeSpan.FromDays(90)
+                };
+                context.Response.Headers[Microsoft.Net.Http.Headers.HeaderNames.Vary] = new string[] { "Accept-Encoding" };
+                await next();
+            });
 
             app.UseAuthorization();
 
