@@ -17,14 +17,14 @@ namespace IngestApi.Controllers
         private string maps_client_id = string.Empty;
         private readonly ILogger<LocationController> logger;
 
-        private IMemoryCache memoryCache;
+        private MyMemoryCache memoryCache;
 
-        public MyLocationController(ILogger<LocationController> logger, IConfiguration configuration, IMemoryCache memoryCache)
+        public MyLocationController(ILogger<LocationController> logger, IConfiguration configuration, MyMemoryCache memoryCache)
         {
             this.logger = logger;
             maps_account_key = Environment.GetEnvironmentVariable("azuremaps_key");
             maps_client_id = Environment.GetEnvironmentVariable("azuremaps_client_id");
-            this.memoryCache = memoryCache;
+            this.memoryCache = memoryCache.Cache;
         }
 
         [HttpGet]
