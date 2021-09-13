@@ -56,9 +56,11 @@ namespace IngestApi.Controllers
                 dynamic response = JsonConvert.DeserializeObject(await result.Content.ReadAsStringAsync());
 
                 remoteLocation = response.countryRegion.isoCode.ToString();
+                var remoteLocationSize = remoteLocation.Length;
 
                 var cacheEntryOptions = new MemoryCacheEntryOptions()
-                    .SetSlidingExpiration(TimeSpan.FromDays(1));
+                    .SetSlidingExpiration(TimeSpan.FromDays(1))
+                    .SetSize(remoteLocationSize);
 
                 memoryCache.Set(remoteIpAddress, remoteLocation, cacheEntryOptions);
             }
