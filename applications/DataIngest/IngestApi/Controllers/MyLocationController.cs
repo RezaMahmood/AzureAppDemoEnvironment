@@ -17,7 +17,7 @@ namespace IngestApi.Controllers
         private string maps_client_id = string.Empty;
         private readonly ILogger<LocationController> logger;
 
-        private MyMemoryCache memoryCache;
+        private MemoryCache memoryCache;
 
         public MyLocationController(ILogger<LocationController> logger, IConfiguration configuration, MyMemoryCache memoryCache)
         {
